@@ -98,12 +98,6 @@ export const Issues = styled.div`
       margin-top: 16px;
     }
 
-    img {
-      height: 64px;
-      width: 64px;
-      border-radius: 50%;
-    }
-
     div {
       margin-left: 16px;
       flex: 1;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouteMatch, Link } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
@@ -11,53 +11,99 @@ interface RepositoryParams {
   repository: string;
 }
 
+interface Repository {
+  full_name: string;
+  description: string;
+  stargazers_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
+}
+
+interface Issue {
+  id: number;
+  title: string;
+  html_url: string;
+  user: {
+    login: string;
+  };
+}
+
 const Repository: React.FC = () => {
+  const [repository, setRepository] = useState<Repository | null>(null);
+  const [issues, setIssues] = useState<Issue[]>([]);
+
   const { params } = useRouteMatch<RepositoryParams>();
+
+  useEffect(() => {
+    // Executa as duas buscas ao mesmo tempo utilizando await
+    async function loadData(): Promise<void> {
+      const [repositoryData, issuesData] = await Promise.all([
+        api.get(`repos/${params.repository}`),
+        api.get(`repos/${params.repository}/issues`),
+      ]);
+
+      setRepository(repositoryData.data);
+      setIssues(issuesData.data);
+    }
+
+    loadData();
+  }, [params.repository]);
 
   return (
     <>
       <Header>
         <img src={logoImg} alt="Github Explorer" />
-        <Link to="/dashboard">
+        <Link to="/">
           <FiChevronLeft size={16} />
           Voltar
         </Link>
       </Header>
-      <RepositoryInfo>
-        <header>
-          <img
-            src="https://avatars2.githubusercontent.com/u/41977327?s=400&u=f4b82d6f9c71964f6c943b0172517458571d2c85&v=4"
-            alt="Pedro"
-          />
-          <div>
-            <strong>rocketseat</strong>
-            <p>description</p>
-          </div>
-        </header>
-        <ul>
-          <li>
-            <strong>1808</strong>
-            <p>Stars</p>
-          </li>
-          <li>
-            <strong>1808</strong>
-            <p>Stars</p>
-          </li>
-          <li>
-            <strong>1808</strong>
-            <p>Stars</p>
-          </li>
-        </ul>
-      </RepositoryInfo>
+
+      {repository ? (
+        <RepositoryInfo>
+          <header>
+            <img
+              src={repository.owner.avatar_url}
+              alt={repository.owner.login}
+            />
+            <div>
+              <strong>{repository.full_name}</strong>
+              <p>{repository.description}</p>
+            </div>
+          </header>
+          <ul>
+            <li>
+              <strong>{repository.stargazers_count}</strong>
+              <p>Stars</p>
+            </li>
+            <li>
+              <strong>{repository.forks_count}</strong>
+              <p>Forks</p>
+            </li>
+            <li>
+              <strong>{repository.open_issues_count}</strong>
+              <p>Issues</p>
+            </li>
+          </ul>
+        </RepositoryInfo>
+      ) : (
+        <p>Carregando...</p>
+      )}
 
       <Issues>
-        <Link to="oi">
-          <div>
-            <strong>repository.full_name</strong>
-            <p>repository.description</p>
-          </div>
-          <FiChevronRight size={20} />
-        </Link>
+        {issues.map(issue => (
+          <a key={issue.id} href={issue.html_url} target="_blank">
+            <div>
+              <strong>{issue.title}</strong>
+              <p>{issue.user.login}</p>
+            </div>
+            <FiChevronRight size={20} />
+          </a>
+        ))}
       </Issues>
     </>
   );
